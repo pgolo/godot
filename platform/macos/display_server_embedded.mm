@@ -201,6 +201,7 @@ DisplayServerEmbedded::DisplayServerEmbedded(const String &p_rendering_driver, W
 	bounds = CGRectApplyAffineTransform(bounds, CGAffineTransformInvert(CGAffineTransformMakeScale(scale, scale)));
 	layer.bounds = bounds;
 
+#if !defined(GODOT_NO_PRIVATE_SPI)
 	CGSConnectionID connection_id = CGSMainConnectionID();
 	ca_context = [CAContext contextWithCGSConnection:connection_id options:@{ kCAContextCIFilterBehavior : @"ignore" }];
 	ca_context.layer = layer;
@@ -209,6 +210,14 @@ DisplayServerEmbedded::DisplayServerEmbedded(const String &p_rendering_driver, W
 		Array arr = { ca_context.contextId };
 		EngineDebugger::get_singleton()->send_message("game_view:set_context_id", arr);
 	}
+#else
+	// App Store build: do not reference private CAContext SPI.
+	// Notify debugger with a default / zero context id to keep the message contract.
+	{
+		Array arr = { 0 };
+		EngineDebugger::get_singleton()->send_message("game_view:set_context_id", arr);
+	}
+#endif // GODOT_NO_PRIVATE_SPI
 }
 
 DisplayServerEmbedded::~DisplayServerEmbedded() {
@@ -491,7 +500,7 @@ Point2i DisplayServerEmbedded::screen_get_position(int p_screen) const {
 }
 
 Size2i DisplayServerEmbedded::screen_get_size(int p_screen) const {
-	_THREAD_SAFE_METHOD_
+		_THREAD_SAFE_METHOD_
 
 	p_screen = _get_screen_index(p_screen);
 	int screen_count = get_screen_count();

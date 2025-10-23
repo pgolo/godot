@@ -30,36 +30,22 @@
 
 #pragma once
 
-// Copyright 2014 The Chromium Authors. All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the OpenEmu Team nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY OpenEmu Team ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL OpenEmu Team BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #import <Foundation/Foundation.h>
 #import <Quartz/Quartz.h>
 
 #include <stdint.h>
 
-// https://chromium.googlesource.com/chromium/src/+/refs/heads/main/ui/base/cocoa/remote_layer_api.h
+/*
+ * WARNING: This header exposes private CoreAnimation SPI (CAContext).
+ * Binaries built for the App Store must avoid emitting these Objective-C
+ * symbols (they are non-public APIs). To exclude the private SPI, build
+ * with -DGODOT_NO_PRIVATE_SPI (e.g. pass CCFLAGS and OBJCFLAGS via SCons).
+ */
+
+#ifndef GODOT_MACOS_QUARTZ_CORE_SPI_H
+#define GODOT_MACOS_QUARTZ_CORE_SPI_H
+
+#ifndef GODOT_NO_PRIVATE_SPI
 
 // The CAContextID type identifies a CAContext across processes. This is the
 // token that is passed from the process that is sharing the CALayer that it is
@@ -72,7 +58,8 @@ typedef uint32_t CAContextID;
 // that is set as the |layer| property on the CAContext.
 @interface CAContext : NSObject
 + (instancetype)contextWithCGSConnection:(CAContextID)contextId options:(NSDictionary *)optionsDict;
-@property(readonly) CAContextID contextId;
+// Declare the contextId as readonly to avoid duplicate/contradictory declarations.
+@property (readonly) CAContextID contextId;
 @property(retain) CALayer *layer;
 @end
 
@@ -89,6 +76,17 @@ typedef uint32_t CAContextID;
 // going to share the CALayers that it is rendering to another process to
 // display.
 typedef uint32_t CGSConnectionID;
-extern "C" CGSConnectionID CGSMainConnectionID(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern CGSConnectionID CGSMainConnectionID(void);
+#ifdef __cplusplus
+}
+#endif
 
-extern "C" NSString *const kCAContextCIFilterBehavior;
+// Private CoreAnimation NSString constant (private SPI).
+FOUNDATION_EXPORT NSString *const kCAContextCIFilterBehavior;
+
+#endif // !GODOT_NO_PRIVATE_SPI
+
+#endif // GODOT_MACOS_QUARTZ_CORE_SPI_H

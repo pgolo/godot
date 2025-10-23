@@ -28,11 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/*
+2025-10-22: Pavel Golovatenko-Abramov: added option to build export
+template without using private macOS SPI (the original culprit was App Store
+policies rejecting builds that referenced the CAContext dependency).
+
+Example of usage:
+scons platform=macos target=template_release tools=no arch=arm64 -j"$N" CCFLAGS="-DGODOT_NO_PRIVATE_SPI"
+*/
+
+
 #pragma once
 
 #include "display_server_macos_base.h"
 
+#ifndef GODOT_NO_PRIVATE_SPI
 @class CAContext;
+#endif
 @class CALayer;
 class GLManagerEmbedded;
 class RenderingContextDriver;
@@ -73,7 +85,11 @@ class DisplayServerEmbedded : public DisplayServerMacOSBase {
 
 	bool transparent = false;
 
+#ifndef GODOT_NO_PRIVATE_SPI
+	// Only present when private SPI is enabled.
 	CAContext *ca_context = nullptr;
+#endif
+
 	// Either be a CAMetalLayer or a CALayer depending on the rendering driver.
 	CALayer *layer = nullptr;
 #ifdef GLES3_ENABLED
